@@ -1,0 +1,203 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Calendário de Cursos – IEL Amazonas</title>
+  <meta name="description" content="Gera calendários de aula de cursos livres do IEL Amazonas para impressão, WhatsApp e agenda.">
+  <link rel="icon" type="image/png" href="img/logo-iel-simbolo.png">
+  <link rel="stylesheet" href="estilo.css">
+  <style id="estilo-pagina">@page { size: A4 portrait; margin: 0; }</style>
+</head>
+<body>
+<div class="app">
+  <header class="topo">
+    <img src="img/logo-iel.png" alt="IEL – Instituto Euvaldo Lodi" class="topo-logo">
+    <div>
+      <h1>Calendário de Cursos</h1>
+      <p>Preencha os dados do curso. O calendário é montado ao lado, já com os feriados descontados.</p>
+    </div>
+  </header>
+
+  <main class="layout">
+    <form id="form" class="formulario" autocomplete="off" novalidate>
+
+      <section class="bloco">
+        <h2><span>1</span> Curso</h2>
+        <label class="campo">Nome do curso
+          <input name="curso" type="text" maxlength="120" placeholder="Ex.: Excel Avançado">
+        </label>
+        <div class="linha">
+          <label class="campo">Carga horária total (h)
+            <input name="chTotal" type="number" min="0.5" step="0.5" inputmode="decimal" placeholder="40">
+          </label>
+          <label class="campo">Turma / código <small>opcional</small>
+            <input name="turma" type="text" maxlength="40" placeholder="Ex.: T01-2026">
+          </label>
+        </div>
+        <label class="campo">Instrutor(a) <small>opcional</small>
+          <input name="instrutor" type="text" maxlength="80">
+        </label>
+      </section>
+
+      <section class="bloco">
+        <h2><span>2</span> Horário e local</h2>
+        <div class="linha">
+          <label class="campo">Turno
+            <select name="turno">
+              <option value="">Selecione</option>
+              <option>Matutino</option>
+              <option>Vespertino</option>
+              <option>Noturno</option>
+              <option>Integral</option>
+            </select>
+          </label>
+          <label class="campo">Início
+            <input name="horaInicio" type="time" step="900">
+          </label>
+          <label class="campo">Término
+            <input name="horaFim" type="time" step="900">
+          </label>
+        </div>
+        <div class="linha">
+          <label class="campo">Intervalo de <small>opcional</small>
+            <input name="intervaloInicio" type="time" step="900">
+          </label>
+          <label class="campo">até
+            <input name="intervaloFim" type="time" step="900">
+          </label>
+          <label class="campo">Horas por aula
+            <input name="chDiaria" type="number" min="0.5" step="0.5" inputmode="decimal" placeholder="4">
+          </label>
+        </div>
+        <p class="ajuda" id="ajuda-chdiaria">Calculado pelo horário. Pode ajustar à mão.</p>
+        <div class="linha">
+          <label class="campo">Local
+            <select name="localOpcao">
+              <option value="">Selecione</option>
+              <option>Unidade Distrito</option>
+              <option>Unidade Leste</option>
+              <option>Unidade Centro</option>
+              <option value="outro">Outro (digitar)</option>
+            </select>
+          </label>
+          <label class="campo" id="campo-local-outro" hidden>Qual local?
+            <input name="localOutro" type="text" maxlength="120" placeholder="Ex.: In Company – Empresa X">
+          </label>
+        </div>
+      </section>
+
+      <section class="bloco">
+        <h2><span>3</span> Datas</h2>
+        <fieldset class="dias">
+          <legend>Dias de aula</legend>
+          <label><input type="checkbox" name="dias" value="1"><span>Seg</span></label>
+          <label><input type="checkbox" name="dias" value="2"><span>Ter</span></label>
+          <label><input type="checkbox" name="dias" value="3"><span>Qua</span></label>
+          <label><input type="checkbox" name="dias" value="4"><span>Qui</span></label>
+          <label><input type="checkbox" name="dias" value="5"><span>Sex</span></label>
+          <label><input type="checkbox" name="dias" value="6"><span>Sáb</span></label>
+          <label><input type="checkbox" name="dias" value="0"><span>Dom</span></label>
+        </fieldset>
+        <div class="linha">
+          <label class="campo">Data de início
+            <input name="inicio" type="date">
+          </label>
+          <div class="campo">Data de término
+            <output id="saida-fim" class="calculado">—</output>
+          </div>
+        </div>
+        <p class="ajuda">O término é calculado pela carga horária, pulando feriados e dias ponte.</p>
+      </section>
+
+      <section class="bloco">
+        <h2><span>4</span> Logo do parceiro e observações</h2>
+        <div class="campo">Logo adicional <small>opcional · PNG, JPG ou SVG até 2 MB</small>
+          <div class="upload">
+            <label class="botao secundario">
+              <input id="logo-parceiro" type="file" accept="image/png,image/jpeg,image/svg+xml" hidden>
+              Escolher arquivo
+            </label>
+            <span id="logo-nome" class="ajuda">Nenhum arquivo</span>
+            <button type="button" id="logo-remover" class="botao-link" hidden>Remover</button>
+          </div>
+        </div>
+        <label class="campo">Observações <small>opcional · aparece no calendário</small>
+          <textarea name="observacoes" rows="2" maxlength="200" placeholder="Ex.: Trazer notebook a partir da 3ª aula."></textarea>
+        </label>
+      </section>
+
+      <details class="bloco" id="bloco-feriados">
+        <summary><h2><span>5</span> Feriados e dias ponte</h2></summary>
+        <p class="ajuda">Ficam salvos neste navegador e valem para todos os cursos. Desmarque "Sem aula" para manter a aula num feriado.</p>
+
+        <div class="linha linha-meio">
+          <label class="campo">Ano
+            <select id="ano-feriados"></select>
+          </label>
+        </div>
+        <div class="tabela-rolagem">
+          <table class="tabela" id="tabela-feriados">
+            <thead><tr><th>Sem aula</th><th>Data</th><th>Feriado</th><th>Tipo</th><th></th></tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+        <div class="adicionar" id="form-feriado">
+          <input type="date" id="novo-feriado-data" aria-label="Data do recesso">
+          <input type="text" id="novo-feriado-nome" maxlength="60" placeholder="Recesso / feriado extra" aria-label="Nome do recesso">
+          <button type="button" class="botao secundario" id="adicionar-feriado">Adicionar</button>
+        </div>
+
+        <h3>Dias ponte</h3>
+        <p class="ajuda">Paradas internas da escola. Nesses dias não há aula.</p>
+        <ul class="lista-pontes" id="lista-pontes"></ul>
+        <div class="adicionar">
+          <input type="date" id="nova-ponte-data" aria-label="Data do dia ponte">
+          <input type="text" id="nova-ponte-motivo" maxlength="60" placeholder="Motivo (opcional)" aria-label="Motivo">
+          <button type="button" class="botao secundario" id="adicionar-ponte">Adicionar</button>
+        </div>
+
+        <div class="acoes-lista">
+          <button type="button" class="botao-link" id="exportar-lista">Exportar lista</button>
+          <label class="botao-link">
+            <input type="file" id="importar-lista" accept="application/json,.json" hidden>Importar lista
+          </label>
+          <button type="button" class="botao-link perigo" id="restaurar-lista">Restaurar padrão</button>
+        </div>
+      </details>
+    </form>
+
+    <section class="previa" aria-label="Pré-visualização">
+      <div class="barra">
+        <fieldset class="modo">
+          <legend>Impressão</legend>
+          <label><input type="radio" name="modo" value="1" checked><span>1 por folha</span></label>
+          <label><input type="radio" name="modo" value="2"><span>2 por folha</span></label>
+          <label><input type="radio" name="modo" value="4"><span>4 por folha</span></label>
+        </fieldset>
+        <div class="botoes">
+          <button type="button" class="botao" id="imprimir">Imprimir / PDF</button>
+          <button type="button" class="botao secundario" id="baixar-png">Imagem (WhatsApp)</button>
+          <button type="button" class="botao secundario" id="baixar-ics">Agenda (.ics)</button>
+        </div>
+      </div>
+      <div id="mensagens" class="mensagens" aria-live="polite"></div>
+      <div id="previa" class="previa-cartao"></div>
+      <p class="ajuda centro" id="dica-clique" hidden>Clique num dia de aula para tirá-lo. A aula passa para o próximo dia marcado.</p>
+      <div id="detalhes" class="detalhes"></div>
+    </section>
+  </main>
+
+  <footer class="rodape-app">
+    IEL Amazonas · Calendário de Cursos <span id="versao"></span> · Os dados não saem do seu navegador.
+  </footer>
+</div>
+
+<div id="impressao"></div>
+
+<script src="vendor/html-to-image.js"></script>
+<script src="feriados.js"></script>
+<script src="calendario.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

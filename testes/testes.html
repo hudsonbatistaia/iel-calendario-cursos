@@ -1,0 +1,129 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Testes – Calendário de Cursos</title>
+  <style>
+    body { font: 14px/1.5 "Segoe UI", system-ui, sans-serif; margin: 24px; background: #fff; color: #22262E; }
+    h1 { font-size: 18px; color: #2957A4; }
+    li.ok::marker { content: "✔ "; color: #1a7f37; }
+    li.falha { color: #B42318; }
+    li.falha::marker { content: "✘ "; }
+    #resumo { font-weight: 700; }
+  </style>
+</head>
+<body>
+<h1>Testes do cálculo do calendário</h1>
+<p>Abra este arquivo no navegador. Todos os itens devem ficar verdes.</p>
+<p id="resumo"></p>
+<ol id="saida"></ol>
+
+<script src="../site/feriados.js"></script>
+<script src="../site/calendario.js"></script>
+<script>
+  const C = window.CalendarioIEL, F = window.FeriadosIEL;
+  const saida = document.getElementById('saida');
+  let ok = 0, falhas = 0;
+
+  function teste(nome, obtido, esperado) {
+    const a = JSON.stringify(obtido), b = JSON.stringify(esperado);
+    const li = document.createElement('li');
+    if (a === b) { ok++; li.className = 'ok'; li.textContent = nome; }
+    else { falhas++; li.className = 'falha'; li.textContent = nome + ' — esperado ' + b + ', obtido ' + a; }
+    saida.appendChild(li);
+  }
+
+  // Bloqueios padrão (feriados com pular = true) para os anos indicados
+  function bloqueiosPadrao(anos) {
+    const b = {};
+    anos.forEach((ano) => F.feriadosDoAno(ano).forEach((f) => { if (f.pular) b[f.data] = f.nome; }));
+    return b;
+  }
+  const datas = (r) => r.aulas.map((a) => a.data);
+
+  // Páscoa e feriados móveis
+  teste('Páscoa 2025', F.pascoa(2025), '2025-04-20');
+  teste('Páscoa 2026', F.pascoa(2026), '2026-04-05');
+  teste('Páscoa 2027', F.pascoa(2027), '2027-03-28');
+  const f2026 = F.feriadosDoAno(2026);
+  const achar = (nome) => f2026.find((f) => f.nome === nome);
+  teste('Carnaval 2026 (segunda) é ponto facultativo', [achar('Carnaval (segunda)').data, achar('Carnaval (segunda)').pular], ['2026-02-16', false]);
+  teste('Sexta-feira Santa 2026 bloqueia', [achar('Sexta-feira Santa').data, achar('Sexta-feira Santa').pular], ['2026-04-03', true]);
+  teste('Corpus Christi 2026', achar('Corpus Christi').data, '2026-06-04');
+  teste('Aniversário de Manaus 2026', achar('Aniversário de Manaus').data, '2026-10-24');
+  teste('Lista 2026 tem 17 datas', f2026.length, 17);
+
+  // Datas sem erro de fuso
+  teste('13/10/2026 é terça', C.diaSemana('2026-10-13'), 2);
+  teste('Soma de dias atravessa o ano', C.somarDias('2026-12-30', 3), '2027-01-02');
+  teste('Data inválida é recusada', C.isoValido('2026-02-30'), false);
+
+  // Caso 1: curso de 1 sábado, 8h, integral
+  const r1 = C.calcularAulas({ inicio: '2026-10-17', diasSemana: [6], minutosTotal: 480, minutosDia: 480, bloqueios: bloqueiosPadrao([2026]) });
+  teste('1 sábado: uma aula em 17/10', [datas(r1), r1.fim], [['2026-10-17'], '2026-10-17']);
+
+  // Caso 2: 40h, Seg/Qua/Sex, 4h, atravessa o mês e pula Finados
+  const op2 = { inicio: '2026-10-14', diasSemana: [1, 3, 5], minutosTotal: 2400, minutosDia: 240, bloqueios: bloqueiosPadrao([2026]) };
+  const r2 = C.calcularAulas(op2);
+  teste('40h Seg/Qua/Sex: 10 aulas', r2.aulas.length, 10);
+  teste('40h Seg/Qua/Sex: termina em 06/11', r2.fim, '2026-11-06');
+  teste('40h Seg/Qua/Sex: pula Finados', r2.pulados.map((p) => p.data), ['2026-11-02']);
+
+  // Caso 3: feriado no meio (sábado 24/10, aniversário de Manaus)
+  const r3 = C.calcularAulas({ inicio: '2026-10-17', diasSemana: [6], minutosTotal: 960, minutosDia: 240, bloqueios: bloqueiosPadrao([2026]) });
+  teste('Sábados: pula 24/10 e empurra o término', [datas(r3), r3.pulados[0].data],
+    [['2026-10-17', '2026-10-31', '2026-11-07', '2026-11-14'], '2026-10-24']);
+
+  // Caso 4: carga que não fecha (20h a 3h por aula)
+  const r4 = C.calcularAulas({ inicio: '2026-10-19', diasSemana: [1, 2, 3, 4, 5], minutosTotal: 1200, minutosDia: 180, bloqueios: {} });
+  teste('20h a 3h: 7 aulas, última com 2h', [r4.aulas.length, r4.aulas[6].minutos], [7, 120]);
+
+  // Dia ponte e dia removido à mão empurram o término
+  const r5 = C.calcularAulas(Object.assign({}, op2, { removidos: ['2026-10-16'] }));
+  teste('Dia removido empurra o término para 09/11', [r5.aulas.length, r5.fim, r5.pulados[0].tipo], [10, '2026-11-09', 'removido']);
+  const r6 = C.calcularAulas(Object.assign({}, op2, { bloqueios: Object.assign(bloqueiosPadrao([2026]), { '2026-10-30': 'Dia ponte' }) }));
+  teste('Dia ponte empurra o término para 09/11', r6.fim, '2026-11-09');
+
+  // Ponto facultativo mantém a aula e gera aviso
+  const r7 = C.calcularAulas({ inicio: '2026-02-16', diasSemana: [1], minutosTotal: 240, minutosDia: 240, bloqueios: {}, alertas: { '2026-02-16': 'Carnaval' } });
+  teste('Carnaval mantém a aula com aviso', [datas(r7), r7.avisos.length], [['2026-02-16'], 1]);
+
+  // Trava de segurança
+  const r8 = C.calcularAulas({ inicio: '2026-10-13', diasSemana: [2], minutosTotal: 600000, minutosDia: 60, bloqueios: {} });
+  teste('Carga absurda não trava o navegador', r8.incompleto, true);
+
+  // Grade dos meses
+  const out = C.gradeDoMes(2026, 10);
+  teste('Outubro/2026 começa na quinta e tem 5 semanas', [out[0].indexOf('2026-10-01'), out.length], [4, 5]);
+  teste('Meses de nov/2026 a fev/2027', C.mesesDoPeriodo('2026-11-20', '2027-02-03').length, 4);
+
+  // Horários
+  const integral = { inicio: '08:00', fim: '17:00', intervaloInicio: '12:00', intervaloFim: '13:00' };
+  teste('Integral 8h–17h com almoço = 8h', C.minutosDaJanela(integral), 480);
+  teste('Aula de 4h no integral termina 12h', C.fimDaAula(integral, 240), '12:00');
+  teste('Aula de 5h no integral termina 14h', C.fimDaAula(integral, 300), '14:00');
+  teste('Texto do horário integral', C.formatarHorario(integral), '8h às 12h e 13h às 17h');
+  teste('Texto do horário noturno com meia hora', C.formatarHorario({ inicio: '18:30', fim: '22:00' }), '18h30 às 22h');
+
+  // Formatação
+  teste('Lista compacta das aulas', C.listaCompacta(['2026-10-14', '2026-10-16', '2026-11-04']), '14 e 16/out · 4/nov');
+  teste('Período no mesmo ano', C.formatarPeriodo('2026-10-14', '2026-11-06'), '14/10 a 06/11/2026');
+
+  // Arquivo .ics
+  const ics = C.gerarIcs({ curso: 'Excel Avançado, turma noite; com acentuação longa para testar a quebra de linha do formato iCalendar', local: 'Sede IEL', horario: { inicio: '18:00', fim: '22:00' } },
+    r2.aulas, new Date(Date.UTC(2026, 9, 6, 12, 0, 0)));
+  const linhasIcs = ics.split('\r\n');
+  teste('.ics tem um evento por aula', (ics.match(/BEGIN:VEVENT/g) || []).length, 10);
+  teste('.ics usa o fuso de Manaus', ics.indexOf('DTSTART;TZID=America/Manaus:20261014T180000') !== -1, true);
+  teste('.ics: nenhuma linha passa de 75 bytes', linhasIcs.every((l) => new TextEncoder().encode(l).length <= 75), true);
+  teste('.ics sem horário vira evento de dia inteiro',
+    C.gerarIcs({ curso: 'X', horario: { inicio: '', fim: '' } }, r1.aulas).indexOf('DTSTART;VALUE=DATE:20261017') !== -1, true);
+
+  document.getElementById('resumo').textContent = falhas
+    ? falhas + ' falha(s), ' + ok + ' ok'
+    : 'Todos os ' + ok + ' testes passaram';
+  document.title = (falhas ? 'FALHOU' : 'OK') + ' – ' + document.title;
+</script>
+</body>
+</html>
