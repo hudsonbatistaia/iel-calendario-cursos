@@ -674,6 +674,20 @@
     mudouLista();
   });
 
+  // Tema claro/escuro da tela (o calendário em si é sempre claro)
+  function atualizarBotaoTema() {
+    const escuro = document.documentElement.dataset.tema === 'escuro';
+    $('tema-rotulo').textContent = escuro ? 'Tema claro' : 'Tema escuro';
+    $('alternar-tema').setAttribute('aria-label', escuro ? 'Mudar para o tema claro' : 'Mudar para o tema escuro');
+  }
+  $('alternar-tema').addEventListener('click', () => {
+    const novo = document.documentElement.dataset.tema === 'escuro' ? 'claro' : 'escuro';
+    document.documentElement.dataset.tema = novo;
+    try { localStorage.setItem('calendarioIEL.tema', novo); } catch (e) { /* sem armazenamento: vale só nesta visita */ }
+    atualizarBotaoTema();
+  });
+  atualizarBotaoTema();
+
   $('versao').textContent = VERSAO;
   atualizar();
 })();
