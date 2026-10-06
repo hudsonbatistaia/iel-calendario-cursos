@@ -26,11 +26,29 @@
       if (t !== 'claro' && t !== 'escuro') t = matchMedia('(prefers-color-scheme: dark)').matches ? 'escuro' : 'claro';
       document.documentElement.dataset.tema = t;
     })();
+    // Senha de acesso: guarda só o hash SHA-256 (para trocar, gere o hash da nova senha e substitua aqui).
+    // É uma barreira simples contra uso por quem não é da equipe, não uma proteção de dados.
+    window.HASH_SENHA = '5100f8d8f4e2aef9d5c25dff4eabcbca4f93545f3618d9527c18439fd8634e27';
+    try {
+      if (localStorage.getItem('calendarioIEL.acesso') === window.HASH_SENHA) document.documentElement.dataset.liberado = '1';
+    } catch (e) {}
   </script>
   <link rel="stylesheet" href="estilo.css">
   <style id="estilo-pagina">@page { size: A4 portrait; margin: 0; }</style>
 </head>
 <body>
+<div class="portao" id="portao">
+  <form class="portao-caixa" id="form-senha" autocomplete="off">
+    <img src="img/logo-iel.png" alt="IEL – Instituto Euvaldo Lodi" class="portao-logo">
+    <h1>Calendário de Cursos</h1>
+    <p>Acesso restrito à equipe do IEL Amazonas.</p>
+    <label class="campo">Senha
+      <input type="password" id="senha" autocomplete="current-password" required>
+    </label>
+    <p class="portao-erro" id="senha-erro" hidden>Senha incorreta. Tente de novo.</p>
+    <button type="submit" class="botao">Entrar</button>
+  </form>
+</div>
 <div class="app">
   <header class="topo">
     <img src="img/logo-iel.png" alt="IEL – Instituto Euvaldo Lodi" class="topo-logo">
@@ -221,6 +239,7 @@
 
 <div id="impressao"></div>
 
+<script src="portao.js"></script>
 <script src="vendor/html-to-image.js"></script>
 <script src="feriados.js"></script>
 <script src="calendario.js"></script>

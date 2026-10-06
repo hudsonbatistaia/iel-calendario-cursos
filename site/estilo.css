@@ -51,6 +51,23 @@ body {
 }
 h1, h2, h3, p { margin: 0; }
 
+/* ---------- Tela de senha ---------- */
+:root:not([data-liberado]) .app { display: none; }
+:root[data-liberado] .portao { display: none; }
+.portao { min-height: 100vh; display: grid; place-items: center; padding: 24px 16px; }
+.portao-caixa {
+  width: 100%; max-width: 380px; display: flex; flex-direction: column; gap: 14px;
+  background: var(--branco); border: 1px solid var(--borda); border-radius: 14px;
+  padding: 32px 28px; box-shadow: 0 10px 40px var(--sombra);
+  border-top: 5px solid var(--azul);
+}
+.portao-logo { height: 52px; width: auto; align-self: flex-start; }
+:root[data-tema="escuro"] .portao-logo { background: #FFFFFF; border-radius: 8px; padding: 4px 8px; box-sizing: content-box; }
+.portao h1 { font-size: 22px; color: var(--link); margin-top: 6px; }
+.portao-caixa > p { color: var(--cinza); font-size: 14px; }
+.portao-erro { color: var(--erro) !important; font-weight: 600; }
+.portao .botao { width: 100%; }
+
 /* ---------- Topo ---------- */
 .topo {
   display: flex; align-items: center; gap: 20px;
@@ -112,7 +129,7 @@ details.bloco[open] summary h2::after { content: "▾"; }
 .campo { display: block; font-size: 13px; font-weight: 600; color: var(--texto); }
 .campo > input, .campo > select, .campo > textarea, .campo > output, .campo > .upload { display: flex; margin-top: 4px; }
 .campo small { font-weight: 400; color: var(--cinza); margin-left: 4px; }
-input[type=text], input[type=number], input[type=date], input[type=time], select, textarea {
+input[type=text], input[type=password], input[type=number], input[type=date], input[type=time], select, textarea {
   font: inherit; font-size: 15px; font-weight: 400; color: var(--texto);
   background: var(--branco);
   border: 1px solid var(--borda); border-radius: 8px;

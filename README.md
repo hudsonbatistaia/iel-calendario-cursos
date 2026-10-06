@@ -43,6 +43,16 @@ testes/
 
 Mantenha sempre o mesmo endereço. As listas de feriados ficam salvas por endereço; se a URL mudar, elas "somem" (basta importar o arquivo exportado).
 
+## Senha de acesso
+
+A página pede uma senha antes de abrir, e o navegador lembra depois do primeiro acesso. É uma barreira simples contra quem não é da equipe; quem souber programar consegue contorná-la. O sistema não guarda dados, então não há informação exposta.
+
+Para trocar a senha:
+1. Gere o SHA-256 da nova senha. No PowerShell:
+   `$b=[Text.Encoding]::UTF8.GetBytes('NOVA_SENHA'); ([Security.Cryptography.SHA256]::Create().ComputeHash($b) | % { $_.ToString('x2') }) -join ''`
+2. Cole o resultado em `window.HASH_SENHA`, no `<head>` de `site/index.html`.
+3. Publique. Todos precisarão digitar a nova senha no próximo acesso.
+
 ## Observações
 
 - Abrindo o `index.html` direto do computador, tudo funciona, **menos a imagem PNG**: o navegador bloqueia a leitura da logo nesse modo. Pelo endereço do Render, funciona normalmente.

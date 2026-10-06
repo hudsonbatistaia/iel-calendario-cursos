@@ -570,6 +570,12 @@
   $('baixar-ics').addEventListener('click', baixarIcs);
   window.addEventListener('beforeprint', prepararImpressao); // também cobre o Ctrl+P
   window.addEventListener('afterprint', () => { document.title = TITULO_PAGINA; });
+  // Ao liberar a tela de senha (ou redimensionar), refaz a pré-visualização: o tamanho dos meses depende da medida na tela
+  let esperaResize = null;
+  window.addEventListener('resize', () => {
+    clearTimeout(esperaResize);
+    esperaResize = setTimeout(atualizar, 150);
+  });
 
   // Logo do parceiro: lida só no navegador, sem envio
   $('logo-parceiro').addEventListener('change', (e) => {
